@@ -1,0 +1,1891 @@
+{
+  "schema_version": "1.0",
+  "researched_on": "2026-09-06",
+  "title": "Windows cleanup research catalogue",
+  "scope": "Windows 10/11 desktop baseline, optional Microsoft apps and enterprise features, plus explicitly marked historical/discovery candidates. Not an exhaustive list of every app, server role, OS build or relocated cache.",
+  "status": "Research/design catalogue, not executable or production-validated deletion policy.",
+  "rules_count": 82,
+  "all_rules_disabled_by_default": true,
+  "global_policy": {
+    "dry_run_first": true,
+    "delete_root_directories": false,
+    "follow_reparse_points": false,
+    "force_unlock": false,
+    "take_ownership": false,
+    "change_acls": false,
+    "delete_on_reboot": false,
+    "timestamps": "Suggested age uses LastWriteTimeUtc, not LastAccessTime. Age alone does not prove a file unused.",
+    "directory_handling": "Evaluate files individually; remove only now-empty subdirectories after validation. Never recursive-delete a directory merely because its own timestamp is old.",
+    "required_checks": [
+      "Validate target identity and allowlisted root",
+      "Resolve target user context",
+      "Skip unresolved variables and absent locations",
+      "Deduplicate filesystem identities",
+      "Revalidate against reparse-point swaps at deletion time",
+      "Exclude active installation/servicing/sync and recovery work",
+      "Skip sharing violations/access denied and log them",
+      "Record actual deletions and errors"
+    ],
+    "shipping_guidance": "Keep discover_only and exclude rows non-executable. Enabling other methods requires an implemented, tested adapter and applicable user selection."
+  },
+  "path_notation": {
+    "percent_variables": "Resolve for selected user/environment; not necessarily cleaner process.",
+    "braces": "Logical placeholders requiring a resolver; not Windows environment variables.",
+    "wildcards": "Documentation patterns only, not shell commands. Restrict enumeration to validated roots.",
+    "locations": "Discovery hints. A location in this file is NOT permission to recursively delete it."
+  },
+  "methods": {
+    "filtered_contents": "Future file adapter, individual selection with all gates.",
+    "windows_cleanup": "OS cleanup category/handler; do not translate to rm/rmdir.",
+    "owner_api": "Supported owning component API; semantic, not an implementation.",
+    "owner_ui": "Delegate to owning application or Windows UI.",
+    "command": "Dispatch a documented command only through a tested adapter.",
+    "repair_workflow": "Separate version-tested repair procedure with explicit scope.",
+    "discover_only": "Inventory/report only; no deletion.",
+    "exclude": "Hard exclusion from generic cleanup."
+  },
+  "groups": {
+    "Temporary files": "Candidates for conservative file-level retention, after per-rule gates; no unconditional safe-delete claim.",
+    "Rebuildable caches": "Optional reclamation; regeneration has a cost. Use owner cleanup when available.",
+    "Diagnostic retention": "Optional old diagnostic evidence; preserve newest samples and active investigations.",
+    "Windows-managed cleanup": "Windows or management product selects/removes its own content.",
+    "Repair only": "Explicit troubleshooting action, never run during ordinary disk cleanup.",
+    "Application-specific": "Separate version-aware application adapter; not universal Windows rules.",
+    "Privacy only": "User-selected history removal; distinguish from disk hygiene.",
+    "User-selected data": "Real user files/content; separate informed selection.",
+    "Protected or excluded": "Never a generic deletion target; exceptions require a separate specific workflow."
+  },
+  "rules": [
+    {
+      "id": "user_temp",
+      "label": "Resolved user temporary directory",
+      "group": "Temporary files",
+      "scope": "user",
+      "locations": [
+        "{ResolvedUserTemp}"
+      ],
+      "file_patterns": [],
+      "method": "filtered_contents",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 7,
+      "notes": "Resolve under target user token; preserve root and ACLs. Old files can still be needed; skip active workloads and recovery data. TMP and TEMP may differ.",
+      "source_ids": [
+        "temp_api",
+        "storage"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "local_temp",
+      "label": "Conventional local user temp",
+      "group": "Temporary files",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\Temp"
+      ],
+      "file_patterns": [],
+      "method": "filtered_contents",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 7,
+      "notes": "Fallback/discovery candidate; deduplicate against resolved temp. Do not assume it is the only user temp path.",
+      "source_ids": [
+        "community_rules",
+        "temp_api"
+      ],
+      "evidence": "community_path_vendor_semantics",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "windows_temp",
+      "label": "Windows temporary directory",
+      "group": "Temporary files",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\Temp"
+      ],
+      "file_patterns": [],
+      "method": "filtered_contents",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 7,
+      "notes": "Privileged scope; only stale contents when installations/servicing are idle. Skip protected or inaccessible entries.",
+      "source_ids": [
+        "community_rules",
+        "storage"
+      ],
+      "evidence": "community_path_vendor_semantics",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "system_temp",
+      "label": "SYSTEM temporary directory",
+      "group": "Temporary files",
+      "scope": "system",
+      "locations": [
+        "{ResolvedSystemTemp}"
+      ],
+      "file_patterns": [],
+      "method": "filtered_contents",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 7,
+      "notes": "GetTempPath2 under SYSTEM uses SystemTemp override or documented C:\\Windows\\SystemTemp default. Ordinary user resolution does not reveal this path. Preserve restrictive ACLs.",
+      "source_ids": [
+        "temp_api"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "localservice_temp",
+      "label": "LocalService temporary directory",
+      "group": "Temporary files",
+      "scope": "service",
+      "locations": [
+        "%SystemRoot%\\ServiceProfiles\\LocalService\\AppData\\Local\\Temp"
+      ],
+      "file_patterns": [],
+      "method": "filtered_contents",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 14,
+      "notes": "Specialist service cleanup only; keep default off and avoid running service work.",
+      "source_ids": [
+        "community_rules"
+      ],
+      "evidence": "community_path",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "networkservice_temp",
+      "label": "NetworkService temporary directory",
+      "group": "Temporary files",
+      "scope": "service",
+      "locations": [
+        "%SystemRoot%\\ServiceProfiles\\NetworkService\\AppData\\Local\\Temp"
+      ],
+      "file_patterns": [],
+      "method": "filtered_contents",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 14,
+      "notes": "Same service safeguards; do not sweep the surrounding profile.",
+      "source_ids": [
+        "community_rules"
+      ],
+      "evidence": "community_path",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "systemprofile_temp",
+      "label": "System profile temporary directory",
+      "group": "Temporary files",
+      "scope": "system",
+      "locations": [
+        "%SystemRoot%\\System32\\config\\systemprofile\\AppData\\Local\\Temp"
+      ],
+      "file_patterns": [],
+      "method": "filtered_contents",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 14,
+      "notes": "Exists on some installations; distinguish native System32 from redirected access.",
+      "source_ids": [
+        "community_rules"
+      ],
+      "evidence": "community_path",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "wow_systemprofile_temp",
+      "label": "32-bit system profile temp candidate",
+      "group": "Temporary files",
+      "scope": "system",
+      "locations": [
+        "%SystemRoot%\\SysWOW64\\config\\systemprofile\\AppData\\Local\\Temp"
+      ],
+      "file_patterns": [],
+      "method": "filtered_contents",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 14,
+      "notes": "Only if this is a distinct existing directory; deduplicate by filesystem identity.",
+      "source_ids": [
+        "community_rules"
+      ],
+      "evidence": "community_path",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "package_temp",
+      "label": "Packaged app temporary storage",
+      "group": "Temporary files",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\Packages\\{PackageFamilyName}\\TempState"
+      ],
+      "file_patterns": [],
+      "method": "filtered_contents",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 7,
+      "notes": "Enumerate installed packages for selected user; exclude active apps and pending captures/recovery work. Never remove package root.",
+      "source_ids": [
+        "package_data",
+        "package_paths",
+        "community_rules"
+      ],
+      "evidence": "vendor_semantics_version_specific_path",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "custom_temp",
+      "label": "Configured alternate temporary directories",
+      "group": "Temporary files",
+      "scope": "selected_users",
+      "locations": [
+        "{ValidatedConfiguredTempDirectory}"
+      ],
+      "file_patterns": [],
+      "method": "discover_only",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Include per-user TMP/TEMP overrides and terminal-session temp paths only after validating ownership, root boundaries, and exclusions. Never trust an arbitrary environment value as deletion authority.",
+      "source_ids": [
+        "temp_api"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "thumbnails",
+      "label": "Explorer thumbnails",
+      "group": "Rebuildable caches",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\Microsoft\\Windows\\Explorer"
+      ],
+      "file_patterns": [
+        "thumbcache_*.db"
+      ],
+      "method": "windows_cleanup",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Use Windows Thumbnails cleanup category; selective files only for a separately validated shell adapter. Regeneration costs time.",
+      "source_ids": [
+        "explorer_rules",
+        "storage"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "icons",
+      "label": "Explorer icon cache",
+      "group": "Repair only",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\IconCache.db",
+        "%LOCALAPPDATA%\\Microsoft\\Windows\\Explorer\\iconcache_*.db"
+      ],
+      "file_patterns": [],
+      "method": "repair_workflow",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Rebuild only for icon problems, with a planned Explorer restart; never delete all Explorer databases.",
+      "source_ids": [
+        "community_rules"
+      ],
+      "evidence": "community_path",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "directx",
+      "label": "DirectX shader cache",
+      "group": "Rebuildable caches",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\D3DSCache"
+      ],
+      "file_patterns": [],
+      "method": "windows_cleanup",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Prefer DirectX Shader Cache category exposed on the target build. Close graphics workloads; next launches may compile shaders again.",
+      "source_ids": [
+        "community_rules",
+        "storage"
+      ],
+      "evidence": "community_path_vendor_cleanup_framework",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "directx_system",
+      "label": "SYSTEM DirectX shader cache candidate",
+      "group": "Rebuildable caches",
+      "scope": "system",
+      "locations": [
+        "%SystemRoot%\\System32\\config\\systemprofile\\AppData\\Local\\D3DSCache"
+      ],
+      "file_patterns": [],
+      "method": "discover_only",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Specialist coverage candidate; do not enable generic SYSTEM graphics-cache deletion.",
+      "source_ids": [
+        "community_rules"
+      ],
+      "evidence": "community_path",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "wininet",
+      "label": "Legacy WinINet temporary internet files",
+      "group": "Rebuildable caches",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\Microsoft\\Windows\\INetCache"
+      ],
+      "file_patterns": [],
+      "method": "owner_api",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Enumerate/filter cache entries with WinINet APIs or Windows cleanup. The parent may contain Office attachment work; do not recursively purge it.",
+      "source_ids": [
+        "wininet"
+      ],
+      "evidence": "vendor_api_path_requires_detection",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "webcache",
+      "label": "Legacy WebCache database",
+      "group": "Protected or excluded",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\Microsoft\\Windows\\WebCache"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Not a generic disposable folder; associated cache/history state can be coordinated by other components. Use owner-specific cleanup.",
+      "source_ids": [
+        "wininet"
+      ],
+      "evidence": "conservative_exclusion",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "downloaded_programs",
+      "label": "Legacy downloaded program components",
+      "group": "Windows-managed cleanup",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\Downloaded Program Files"
+      ],
+      "file_patterns": [],
+      "method": "windows_cleanup",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Use the Downloaded Program Files handler if present; do not directly delete installed legacy components.",
+      "source_ids": [
+        "cleanmgr",
+        "handlers"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "store_cache",
+      "label": "Microsoft Store cache",
+      "group": "Repair only",
+      "scope": "user",
+      "locations": [
+        "{MicrosoftStoreCache}"
+      ],
+      "file_patterns": [],
+      "method": "command",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Run wsreset.exe in the affected user context for Store problems. Do not replace this with removal of the Store package folder.",
+      "source_ids": [
+        "store"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "font_cache",
+      "label": "Windows font cache candidates",
+      "group": "Repair only",
+      "scope": "service",
+      "locations": [
+        "%SystemRoot%\\ServiceProfiles\\LocalService\\AppData\\Local\\FontCache",
+        "%SystemRoot%\\ServiceProfiles\\LocalService\\AppData\\Local\\*FontCache*.dat"
+      ],
+      "file_patterns": [],
+      "method": "repair_workflow",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Font-related repair only. Requires service-aware, version-tested sequence; do not stop services during ordinary cleaning.",
+      "source_ids": [
+        "community_rules"
+      ],
+      "evidence": "community_path",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "search_index",
+      "label": "Windows Search index",
+      "group": "Repair only",
+      "scope": "machine",
+      "locations": [
+        "%ProgramData%\\Microsoft\\Search\\Data\\Applications\\Windows\\Windows.edb",
+        "%ProgramData%\\Microsoft\\Search\\Data\\Applications\\Windows\\Windows.db"
+      ],
+      "file_patterns": [],
+      "method": "owner_ui",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Use Indexing Options > Advanced > Rebuild for corruption, or reduce indexed locations. Report allocated size. Do not remove database files in generic cleanup.",
+      "source_ids": [
+        "search"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "user_dumps",
+      "label": "Application crash dumps",
+      "group": "Diagnostic retention",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\CrashDumps"
+      ],
+      "file_patterns": [
+        "*.dmp"
+      ],
+      "method": "filtered_contents",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Read WER LocalDumps configuration for overrides. Preserve newest evidence and keep if troubleshooting; delete only selected completed dumps.",
+      "source_ids": [
+        "dumps"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "service_dumps",
+      "label": "Configured service crash dumps",
+      "group": "Diagnostic retention",
+      "scope": "service",
+      "locations": [
+        "{ConfiguredWERDumpFolder}"
+      ],
+      "file_patterns": [],
+      "method": "discover_only",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Service accounts can use profile-specific dump folders. Resolve actual LocalDumps settings and do not assume current user path.",
+      "source_ids": [
+        "dumps"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "kernel_dump",
+      "label": "System crash memory dump",
+      "group": "Diagnostic retention",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\MEMORY.DMP"
+      ],
+      "file_patterns": [],
+      "method": "windows_cleanup",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Resolve CrashControl DumpFile override. Preserve the latest dump until the cause has been diagnosed.",
+      "source_ids": [
+        "nvidia_dumps"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "minidumps",
+      "label": "System minidumps",
+      "group": "Diagnostic retention",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\Minidump"
+      ],
+      "file_patterns": [
+        "*.dmp"
+      ],
+      "method": "filtered_contents",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Resolve configured destination; retain recent crashes and newest useful sample.",
+      "source_ids": [
+        "nvidia_dumps"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "live_dumps",
+      "label": "Live kernel reports",
+      "group": "Diagnostic retention",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\LiveKernelReports"
+      ],
+      "file_patterns": [
+        "*.dmp"
+      ],
+      "method": "filtered_contents",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Select completed .dmp files in subfolders; do not remove folders or unrelated contents. These can diagnose failures without a full system crash.",
+      "source_ids": [
+        "kernel",
+        "nvidia_dumps"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "wer_archives",
+      "label": "Machine WER archives",
+      "group": "Diagnostic retention",
+      "scope": "machine",
+      "locations": [
+        "%ProgramData%\\Microsoft\\Windows\\WER\\ReportArchive"
+      ],
+      "file_patterns": [],
+      "method": "windows_cleanup",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Completed archived reports; prefer available WER cleanup handler. Archive/report folder is the deletion unit.",
+      "source_ids": [
+        "wer_archive",
+        "wer"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "wer_queue",
+      "label": "Machine WER queue",
+      "group": "Diagnostic retention",
+      "scope": "machine",
+      "locations": [
+        "%ProgramData%\\Microsoft\\Windows\\WER\\ReportQueue"
+      ],
+      "file_patterns": [],
+      "method": "windows_cleanup",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "May contain unsent diagnostic evidence; separately selected cleanup only after review.",
+      "source_ids": [
+        "wer_archive",
+        "wer"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "wer_temp",
+      "label": "Machine WER staging",
+      "group": "Diagnostic retention",
+      "scope": "machine",
+      "locations": [
+        "%ProgramData%\\Microsoft\\Windows\\WER\\Temp"
+      ],
+      "file_patterns": [],
+      "method": "windows_cleanup",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Do not race report collection/upload. Use Windows cleanup where supported.",
+      "source_ids": [
+        "community_rules",
+        "wer"
+      ],
+      "evidence": "community_path_vendor_semantics",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "wer_user",
+      "label": "Per-user WER report candidates",
+      "group": "Diagnostic retention",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\Microsoft\\Windows\\WER\\ReportArchive",
+        "%LOCALAPPDATA%\\Microsoft\\Windows\\WER\\ReportQueue"
+      ],
+      "file_patterns": [],
+      "method": "discover_only",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Version-dependent candidates, verify on target build; prefer per-user WER handlers when available.",
+      "source_ids": [
+        "wer",
+        "handlers"
+      ],
+      "evidence": "candidate_requires_target_validation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "cbs_archives",
+      "label": "Archived CBS servicing logs",
+      "group": "Diagnostic retention",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\Logs\\CBS"
+      ],
+      "file_patterns": [
+        "CbsPersist_*.log",
+        "CbsPersist_*.cab"
+      ],
+      "method": "filtered_contents",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Only completed CbsPersist archives; keep CBS.log and newest useful archive. Avoid servicing and unresolved update errors.",
+      "source_ids": [
+        "cbs"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "dism_logs",
+      "label": "DISM logs",
+      "group": "Diagnostic retention",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\Logs\\DISM"
+      ],
+      "file_patterns": [],
+      "method": "discover_only",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Retain active dism.log; offer only individually reviewed rotated logs after servicing is complete. Never blanket-delete Logs.",
+      "source_ids": [
+        "cbs"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "setup_logs",
+      "label": "Windows Setup logs",
+      "group": "Diagnostic retention",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\Panther",
+        "%SystemRoot%\\Logs\\MoSetup",
+        "%SystemRoot%\\setupact.log",
+        "%SystemRoot%\\setuperr.log"
+      ],
+      "file_patterns": [],
+      "method": "windows_cleanup",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Setup log files category when available; no whole-Panther deletion. Preserve upgrade troubleshooting evidence.",
+      "source_ids": [
+        "setup",
+        "setup_paths"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "setupapi",
+      "label": "Device installation logs",
+      "group": "Diagnostic retention",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\INF\\setupapi.dev.log",
+        "%SystemRoot%\\INF\\setupapi.app.log"
+      ],
+      "file_patterns": [],
+      "method": "discover_only",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Diagnostic files, not a cache. Preserve active logs; a retention adapter must identify completed rotations.",
+      "source_ids": [
+        "setup_paths"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "event_logs",
+      "label": "Windows event logs",
+      "group": "Protected or excluded",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\System32\\winevt\\Logs"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Do not wipe event logs for disk hygiene. Explicit log administration uses Event Viewer/wevtutil and separate retention/export policies.",
+      "source_ids": [
+        "events"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "windows_update",
+      "label": "Downloaded Windows Update payloads",
+      "group": "Windows-managed cleanup",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\SoftwareDistribution\\Download"
+      ],
+      "file_patterns": [],
+      "method": "windows_cleanup",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Windows cleanup first. Manual reset is a separate repair workflow; do not delete while download/install or reboot completion is pending.",
+      "source_ids": [
+        "wu",
+        "storage"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "update_datastore",
+      "label": "Windows Update datastore",
+      "group": "Repair only",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\SoftwareDistribution\\DataStore"
+      ],
+      "file_patterns": [],
+      "method": "repair_workflow",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Do not routinely clean database or transaction logs. Microsoft documents reset as troubleshooting; this is not uninstalling installed updates.",
+      "source_ids": [
+        "wu"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "catroot2",
+      "label": "Cryptographic catalog database",
+      "group": "Repair only",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\System32\\catroot2"
+      ],
+      "file_patterns": [],
+      "method": "repair_workflow",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Only a documented update repair, preserving service state. Never apply the same operation to catroot.",
+      "source_ids": [
+        "wu"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "delivery",
+      "label": "Delivery Optimization cache",
+      "group": "Windows-managed cleanup",
+      "scope": "machine",
+      "locations": [
+        "{DeliveryOptimizationManagedCache}"
+      ],
+      "file_patterns": [],
+      "method": "command",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Query cache/jobs using DO cmdlets. Use Delete-DeliveryOptimizationCache; omit IncludePinnedFiles in ordinary cleanup. Location may be policy-relocated.",
+      "source_ids": [
+        "do"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "winsxs",
+      "label": "Component store",
+      "group": "Windows-managed cleanup",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\WinSxS"
+      ],
+      "file_patterns": [],
+      "method": "command",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Use DISM AnalyzeComponentStore / StartComponentCleanup. No recursive deletion, including WinSxS\\Temp. Exclude ResetBase from routine maintenance.",
+      "source_ids": [
+        "winsxs"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "windows_old",
+      "label": "Previous Windows installation",
+      "group": "Windows-managed cleanup",
+      "scope": "machine",
+      "locations": [
+        "%SystemDrive%\\Windows.old"
+      ],
+      "file_patterns": [],
+      "method": "windows_cleanup",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Explicit selection; inspect for recoverable user files and explain rollback loss. Use Previous Windows installation(s).",
+      "source_ids": [
+        "sense",
+        "storage"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "upgrade_staging",
+      "label": "Upgrade staging / rollback folders",
+      "group": "Windows-managed cleanup",
+      "scope": "machine",
+      "locations": [
+        "%SystemDrive%\\$WINDOWS.~BT",
+        "%SystemDrive%\\$WINDOWS.~WS"
+      ],
+      "file_patterns": [],
+      "method": "windows_cleanup",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Build/setup-dependent locations; Windows temporary installation cleanup only after successful upgrade and rollback review. Do not force ownership.",
+      "source_ids": [
+        "setup",
+        "storage"
+      ],
+      "evidence": "vendor_semantics_version_specific_path",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "esd",
+      "label": "Installation/recovery image candidates",
+      "group": "Protected or excluded",
+      "scope": "machine",
+      "locations": [
+        "%SystemDrive%\\ESD"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "May contain recovery or installation sources. Identify role and owner first; never an automatic junk rule.",
+      "source_ids": [
+        "storage"
+      ],
+      "evidence": "conservative_exclusion",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "old_drivers",
+      "label": "Superseded driver packages",
+      "group": "Windows-managed cleanup",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\System32\\DriverStore\\FileRepository"
+      ],
+      "file_patterns": [],
+      "method": "windows_cleanup",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Only OS-supported Device driver packages cleanup when exposed. Manual driver removal belongs to driver management, not file deletion.",
+      "source_ids": [
+        "driver",
+        "handlers"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "branchcache",
+      "label": "BranchCache content",
+      "group": "Windows-managed cleanup",
+      "scope": "machine",
+      "locations": [
+        "{BranchCacheConfiguredStorage}"
+      ],
+      "file_patterns": [],
+      "method": "command",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Optional enterprise feature; use Clear-BCCache after detecting module and policy. Re-fetching affects network usage.",
+      "source_ids": [
+        "branch"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "sccm",
+      "label": "Configuration Manager content cache",
+      "group": "Windows-managed cleanup",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\ccmcache"
+      ],
+      "file_patterns": [],
+      "method": "owner_ui",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Actual cache path is configurable. Use Configuration Manager cache controls; raw filesystem deletion breaks cache bookkeeping.",
+      "source_ids": [
+        "sccm"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "recycle_bin",
+      "label": "Recycle Bin",
+      "group": "User-selected data",
+      "scope": "selected_users",
+      "locations": [
+        "{RecycleBinForSelectedUserAndVolume}"
+      ],
+      "file_patterns": [],
+      "method": "owner_api",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Use SHEmptyRecycleBin / supported shell interface for whole-bin cleanup. Explicit selection; no deletion of other users bins. Age-selective removal needs a separate shell-item implementation.",
+      "source_ids": [
+        "recycle",
+        "sense"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "downloads",
+      "label": "Downloads",
+      "group": "User-selected data",
+      "scope": "user",
+      "locations": [
+        "{FOLDERID_Downloads}"
+      ],
+      "file_patterns": [],
+      "method": "owner_ui",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "User documents and installers, not junk. Manual review only; never enable by default. Resolve redirected known folder.",
+      "source_ids": [
+        "sense",
+        "known_folders"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "cloud_files",
+      "label": "OneDrive/cloud local copies",
+      "group": "User-selected data",
+      "scope": "user",
+      "locations": [
+        "{CloudProviderSyncRoots}"
+      ],
+      "file_patterns": [],
+      "method": "owner_ui",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Use provider Free up space/dehydration after confirming synced state. DeleteFile can delete cloud data, not just a local cache.",
+      "source_ids": [
+        "sense",
+        "storage"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "spool",
+      "label": "Printer spool jobs",
+      "group": "Repair only",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\System32\\spool\\PRINTERS"
+      ],
+      "file_patterns": [],
+      "method": "repair_workflow",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Live print jobs, not junk. Explicit cancellation/recovery only. Discover configured spool directory; never sweep spool drivers.",
+      "source_ids": [
+        "printing"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "edge_http",
+      "label": "Microsoft Edge browser HTTP cache",
+      "group": "Application-specific",
+      "scope": "user",
+      "locations": [
+        "{EdgeProfileDirectory}\\Cache"
+      ],
+      "file_patterns": [],
+      "method": "owner_ui",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Resolve actual profiles and cache overrides; use Cached images and files setting. No entire User Data or profile deletion. Background Edge processes must be idle for any future file adapter.",
+      "source_ids": [
+        "chromium",
+        "webview"
+      ],
+      "evidence": "vendor_semantics_path_requires_app_validation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "browser_compiled",
+      "label": "Browser compiled-code and GPU cache candidates",
+      "group": "Application-specific",
+      "scope": "user",
+      "locations": [
+        "{BrowserProfileDirectory}\\Code Cache",
+        "{BrowserProfileDirectory}\\GPUCache"
+      ],
+      "file_patterns": [],
+      "method": "discover_only",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Version-specific adapter needed; do not infer every Cache directory is disposable. Preserve session, cookie and credential stores.",
+      "source_ids": [
+        "chromium",
+        "webview"
+      ],
+      "evidence": "candidate_requires_target_validation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "webview_cache",
+      "label": "WebView2 cache",
+      "group": "Application-specific",
+      "scope": "user",
+      "locations": [
+        "{ApplicationWebView2UserDataFolder}"
+      ],
+      "file_patterns": [],
+      "method": "owner_api",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Owning application can clear selected browsing-data kinds using WebView2 APIs. Entire UDF contains cookies/settings and other persistent data. No systemwide UDF wipe.",
+      "source_ids": [
+        "webview"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "teams_new",
+      "label": "New Teams cache",
+      "group": "Repair only",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\Packages\\MSTeams_8wekyb3d8bbwe\\LocalCache\\Microsoft\\MSTeams"
+      ],
+      "file_patterns": [],
+      "method": "repair_workflow",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Use documented Teams cache procedure after Quit. This specific vendor rule is not permission to purge other LocalCache folders.",
+      "source_ids": [
+        "teams"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "teams_classic",
+      "label": "Classic Teams cache / state",
+      "group": "Repair only",
+      "scope": "user",
+      "locations": [
+        "%APPDATA%\\Microsoft\\Teams"
+      ],
+      "file_patterns": [],
+      "method": "repair_workflow",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Legacy version only: verify installed client and use documented reset after Quit. Treat as reset, not routine application cache cleaning.",
+      "source_ids": [
+        "teams"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "office_documents",
+      "label": "Office document cache",
+      "group": "Protected or excluded",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\Microsoft\\Office\\16.0\\OfficeFileCache"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "May hold pending document work. Use supported Office retention/repair workflows after verifying all changes saved and synchronized. Version/path may differ.",
+      "source_ids": [
+        "office",
+        "office_repair"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "office_addins",
+      "label": "Office web add-in cache",
+      "group": "Repair only",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\Microsoft\\Office\\16.0\\Wef",
+        "%LOCALAPPDATA%\\Microsoft\\Outlook\\HubAppFileCache"
+      ],
+      "file_patterns": [],
+      "method": "repair_workflow",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Use current host-specific Office add-in instructions; do not assume both paths apply to every host. Close relevant Office apps.",
+      "source_ids": [
+        "wef"
+      ],
+      "evidence": "vendor_semantics_path_requires_app_validation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "outlook_attachments",
+      "label": "Classic Outlook attachment working files",
+      "group": "Application-specific",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\Microsoft\\Windows\\INetCache\\Content.Outlook"
+      ],
+      "file_patterns": [],
+      "method": "discover_only",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Resolve OutlookSecureTempFolder for the installed version. Check for unsaved attachment edits; not an unconditional temporary-file rule.",
+      "source_ids": [
+        "wininet",
+        "office_repair"
+      ],
+      "evidence": "candidate_requires_target_validation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "recent",
+      "label": "Recent-document shortcuts",
+      "group": "Privacy only",
+      "scope": "user",
+      "locations": [
+        "%APPDATA%\\Microsoft\\Windows\\Recent"
+      ],
+      "file_patterns": [
+        "*.lnk"
+      ],
+      "method": "owner_ui",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Clear Recent items through shell settings/appropriate interfaces. This removes history, not original documents; retain pinned preferences.",
+      "source_ids": [
+        "explorer_rules"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "jumplists",
+      "label": "Jump Lists / Quick Access state",
+      "group": "Privacy only",
+      "scope": "user",
+      "locations": [
+        "%APPDATA%\\Microsoft\\Windows\\Recent\\AutomaticDestinations",
+        "%APPDATA%\\Microsoft\\Windows\\Recent\\CustomDestinations"
+      ],
+      "file_patterns": [],
+      "method": "owner_ui",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "May also store pinned items. Do not call a raw folder wipe cache cleaning.",
+      "source_ids": [
+        "community_rules"
+      ],
+      "evidence": "community_path",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "clipboard",
+      "label": "Clipboard and clipboard history",
+      "group": "Privacy only",
+      "scope": "user",
+      "locations": [
+        "{ClipboardHistory}"
+      ],
+      "file_patterns": [],
+      "method": "owner_ui",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "User content, potentially synchronized. Use Windows clipboard controls; not a disk-temp directory.",
+      "source_ids": [
+        "storage"
+      ],
+      "evidence": "conservative_exclusion",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "dns",
+      "label": "DNS resolver cache",
+      "group": "Repair only",
+      "scope": "user",
+      "locations": [
+        "{DNSResolverMemoryCache}"
+      ],
+      "file_patterns": [],
+      "method": "command",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "ipconfig /flushdns for name-resolution troubleshooting. Not a meaningful disk-space cleanup target.",
+      "source_ids": [
+        "dns"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "prefetch",
+      "label": "Prefetch",
+      "group": "Protected or excluded",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\Prefetch"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Exclude from routine cleaning; do not equate performance-related cache with disposable junk or promise speed gains.",
+      "source_ids": [
+        "prefetch_api"
+      ],
+      "evidence": "conservative_exclusion",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "sru",
+      "label": "System Resource Usage database",
+      "group": "Protected or excluded",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\System32\\sru"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Telemetry/accounting database, not an allowlisted temp folder. Community cleaners target it; this catalogue deliberately does not.",
+      "source_ids": [
+        "community_rules",
+        "power"
+      ],
+      "evidence": "community_path_conservative_exclusion",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "wdi",
+      "label": "Windows diagnostic traces",
+      "group": "Diagnostic retention",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\System32\\WDI\\LogFiles",
+        "%SystemRoot%\\System32\\LogFiles"
+      ],
+      "file_patterns": [],
+      "method": "discover_only",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Owner-specific retention only. Some files are live traces or databases; no recursive wildcard log cleanup.",
+      "source_ids": [
+        "community_rules"
+      ],
+      "evidence": "community_path",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "winsat",
+      "label": "WinSAT assessment data",
+      "group": "Diagnostic retention",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\Performance\\WinSAT"
+      ],
+      "file_patterns": [],
+      "method": "discover_only",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Assessment output and logs; preserve by default. Any future rule must select obsolete outputs, not the whole directory.",
+      "source_ids": [
+        "setup_paths"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "legacy_tmp",
+      "label": "Legacy setup temporary directory",
+      "group": "Temporary files",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\msdownld.tmp"
+      ],
+      "file_patterns": [],
+      "method": "discover_only",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Historical/version-dependent candidate. Validate owner and stale setup state before adding a deletion rule.",
+      "source_ids": [
+        "community_rules"
+      ],
+      "evidence": "community_path",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "metadata_backup",
+      "label": "Device metadata cache backup",
+      "group": "Rebuildable caches",
+      "scope": "machine",
+      "locations": [
+        "%ProgramData%\\Microsoft\\Windows\\DeviceMetadataCache\\dmrccache.bak"
+      ],
+      "file_patterns": [],
+      "method": "discover_only",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Community-observed backup candidate; verify target build. No general DeviceMetadataCache deletion.",
+      "source_ids": [
+        "community_rules"
+      ],
+      "evidence": "community_path",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "installer_protected",
+      "label": "Windows Installer cache",
+      "group": "Protected or excluded",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\Installer"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Never generic-delete cached MSI/MSP or $PatchCache$. Missing payloads can break update, repair and uninstall later.",
+      "source_ids": [
+        "installer"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "package_cache",
+      "label": "Installer package caches",
+      "group": "Protected or excluded",
+      "scope": "machine",
+      "locations": [
+        "%ProgramData%\\Package Cache",
+        "%ProgramData%\\Microsoft\\VisualStudio\\Packages"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Owner-specific installer policy only. Visual Studio has a supported cache policy; do not extrapolate it to all bootstrapper caches.",
+      "source_ids": [
+        "vs",
+        "installer"
+      ],
+      "evidence": "vendor_semantics_conservative_exclusion",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "package_localcache",
+      "label": "All packaged-app LocalCache folders",
+      "group": "Protected or excluded",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\Packages\\{PackageFamilyName}\\LocalCache"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Persistent app data can include authentication tokens. Permit only narrower app-specific adapters with documented semantics.",
+      "source_ids": [
+        "package_data"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "package_state",
+      "label": "Packaged-app persistent state",
+      "group": "Protected or excluded",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\Packages\\{PackageFamilyName}\\LocalState",
+        "%LOCALAPPDATA%\\Packages\\{PackageFamilyName}\\RoamingState",
+        "%LOCALAPPDATA%\\Packages\\{PackageFamilyName}\\Settings",
+        "%LOCALAPPDATA%\\Packages\\{PackageFamilyName}\\SystemAppData",
+        "%LOCALAPPDATA%\\Packages\\{PackageFamilyName}\\AC"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "User settings, application data and runtime state. Do not generically erase AC or database transaction logs either.",
+      "source_ids": [
+        "package_data",
+        "package_paths"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "web_storage",
+      "label": "Browser persistent storage",
+      "group": "Protected or excluded",
+      "scope": "user",
+      "locations": [
+        "{BrowserProfileDirectory}\\Service Worker",
+        "{BrowserProfileDirectory}\\IndexedDB",
+        "{BrowserProfileDirectory}\\Local Storage",
+        "{BrowserProfileDirectory}\\Session Storage",
+        "{BrowserProfileDirectory}\\Network",
+        "{BrowserProfileDirectory}\\Sessions"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Offline web applications, sessions and cookies can live here. Explicit browser site-data reset is separate and may destroy offline work or log users out.",
+      "source_ids": [
+        "webview",
+        "chromium"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "mail_data",
+      "label": "Outlook mailbox and recovery data",
+      "group": "Protected or excluded",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\Microsoft\\Outlook",
+        "%LOCALAPPDATA%\\Microsoft\\Office\\UnsavedFiles"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "No broad deletion of PST/OST, draft/recovery files or mail app databases. Data may not exist elsewhere.",
+      "source_ids": [
+        "office_repair"
+      ],
+      "evidence": "conservative_exclusion",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "os_persistence",
+      "label": "Windows persistent system stores",
+      "group": "Protected or excluded",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\System32\\config",
+        "%SystemRoot%\\System32\\catroot",
+        "%SystemRoot%\\servicing",
+        "%ProgramData%\\Microsoft\\Windows\\AppRepository"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Critical OS state; a temp subdirectory under an explicitly identified system profile is a narrowly scoped exception, not authority over its parent.",
+      "source_ids": [
+        "winsxs",
+        "wu",
+        "package_data"
+      ],
+      "evidence": "conservative_exclusion",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "recovery",
+      "label": "Recovery and restore storage",
+      "group": "Protected or excluded",
+      "scope": "machine",
+      "locations": [
+        "{VolumeRoot}\\System Volume Information",
+        "%SystemDrive%\\Recovery"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Recovery points, snapshots and recovery environment are not junk. Any retention change requires a separate supported recovery-management workflow.",
+      "source_ids": [
+        "storage"
+      ],
+      "evidence": "conservative_exclusion",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "virtual_memory",
+      "label": "Paging, swap and hibernation files",
+      "group": "Protected or excluded",
+      "scope": "machine",
+      "locations": [
+        "{VolumeRoot}\\pagefile.sys",
+        "{VolumeRoot}\\swapfile.sys",
+        "%SystemDrive%\\hiberfil.sys"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Manage via Windows settings. Hibernation changes belong to power configuration and can affect Fast Startup; never direct-delete these files.",
+      "source_ids": [
+        "power"
+      ],
+      "evidence": "vendor_semantics_conservative_exclusion",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "sync_security",
+      "label": "Sync databases and security state",
+      "group": "Protected or excluded",
+      "scope": "user",
+      "locations": [
+        "%LOCALAPPDATA%\\Microsoft\\OneDrive\\settings",
+        "%ProgramData%\\Microsoft\\Windows Defender",
+        "%APPDATA%\\Microsoft\\Protect",
+        "%APPDATA%\\Microsoft\\Credentials"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Conservative exclusions: no generic deletion of synchronization state, protection history/quarantine, cryptographic keys, credentials or tokens.",
+      "source_ids": [
+        "sense",
+        "package_data"
+      ],
+      "evidence": "conservative_exclusion",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "generic_extensions",
+      "label": "Drive-wide extension sweeps",
+      "group": "Protected or excluded",
+      "scope": "all",
+      "locations": [
+        "{AnyDirectory}\\*.tmp",
+        "{AnyDirectory}\\*.bak",
+        "{AnyDirectory}\\*.old",
+        "{AnyDirectory}\\*.log",
+        "{AnyDirectory}\\*.cab",
+        "{AnyDirectory}\\*.dmp"
+      ],
+      "file_patterns": [],
+      "method": "exclude",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "A suffix does not establish ownership or disposability. CAB can be installation content; logs can be database transaction logs; TMP can be active or recovery data.",
+      "source_ids": [
+        "winapp2",
+        "installer"
+      ],
+      "evidence": "engineering_exclusion",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "cryptnet_user",
+      "label": "Certificate URL cache",
+      "group": "Repair only",
+      "scope": "user",
+      "locations": [
+        "{FOLDERID_LocalAppDataLow}\\Microsoft\\CryptnetUrlCache"
+      ],
+      "file_patterns": [],
+      "method": "command",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Certificate URL/CRL cache; certutil -URLcache lists entries. Targeted deletion is troubleshooting only and can require refetching certificate validation data. Operate in the intended user context.",
+      "source_ids": [
+        "certutil",
+        "community_rules"
+      ],
+      "evidence": "community_path_vendor_command",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "cryptnet_services",
+      "label": "Service certificate URL caches",
+      "group": "Repair only",
+      "scope": "service",
+      "locations": [
+        "%SystemRoot%\\ServiceProfiles\\{ServiceAccount}\\AppData\\LocalLow\\Microsoft\\CryptnetUrlCache",
+        "%SystemRoot%\\System32\\config\\systemprofile\\AppData\\LocalLow\\Microsoft\\CryptnetUrlCache"
+      ],
+      "file_patterns": [],
+      "method": "discover_only",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": null,
+      "notes": "Inventory only; service-context caches are not cleared by running a user-context command. No direct recursive deletion.",
+      "source_ids": [
+        "certutil",
+        "community_rules"
+      ],
+      "evidence": "community_path_vendor_command",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "wu_traces",
+      "label": "Windows Update ETW traces",
+      "group": "Diagnostic retention",
+      "scope": "machine",
+      "locations": [
+        "%SystemRoot%\\Logs\\WindowsUpdate"
+      ],
+      "file_patterns": [],
+      "method": "discover_only",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Trace data helps diagnose update failures. Retention requires identifying completed sessions; do not blindly erase live ETL files.",
+      "source_ids": [
+        "wu_logs"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    },
+    {
+      "id": "uso_traces",
+      "label": "Update Orchestrator traces",
+      "group": "Diagnostic retention",
+      "scope": "machine",
+      "locations": [
+        "%ProgramData%\\USOShared\\Logs"
+      ],
+      "file_patterns": [],
+      "method": "discover_only",
+      "enabled_by_default": false,
+      "min_age_days_suggestion": 30,
+      "notes": "Diagnostic retention candidate, not a payload cache. Protect ongoing update analysis and active traces.",
+      "source_ids": [
+        "wu_logs"
+      ],
+      "evidence": "vendor_documentation",
+      "windows_validation": "not_tested_on_windows"
+    }
+  ],
+  "sources": {
+    "printing": {
+      "title": "Microsoft: Print spooler repair",
+      "url": "https://support.microsoft.com/en-us/windows/hardware/printer/fix-printer-connection-and-printing-problems-in-windows"
+    },
+    "prefetch_api": {
+      "title": "Microsoft: App Launch Prefetch",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/ns-processthreadsapi-override_prefetch_parameter"
+    },
+    "certutil": {
+      "title": "Microsoft: Certificate URL cache",
+      "url": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/certutil"
+    },
+    "wu_logs": {
+      "title": "Microsoft: Windows Update logs",
+      "url": "https://learn.microsoft.com/en-us/windows/deployment/update/windows-update-logs"
+    },
+    "temp_api": {
+      "title": "Microsoft: GetTempPath2",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-gettemppath2a"
+    },
+    "known_folders": {
+      "title": "Microsoft: SHGetKnownFolderPath",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/api/shlobj_core/nf-shlobj_core-shgetknownfolderpath"
+    },
+    "storage": {
+      "title": "Microsoft: Free up drive space",
+      "url": "https://support.microsoft.com/en-us/windows/experience/storage-filemanagement/free-up-drive-space-in-windows"
+    },
+    "sense": {
+      "title": "Microsoft: Storage Sense",
+      "url": "https://support.microsoft.com/en-us/windows/experience/storage-filemanagement/manage-drive-space-with-storage-sense"
+    },
+    "cleanmgr": {
+      "title": "Microsoft: cleanmgr",
+      "url": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/cleanmgr"
+    },
+    "handlers": {
+      "title": "Microsoft: Disk Cleanup handlers",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/lwef/disk-cleanup"
+    },
+    "winsxs": {
+      "title": "Microsoft: Clean up WinSxS",
+      "url": "https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/clean-up-the-winsxs-folder?view=windows-11"
+    },
+    "do": {
+      "title": "Microsoft: Delivery Optimization management",
+      "url": "https://learn.microsoft.com/en-us/windows/deployment/do/waas-delivery-optimization-monitor"
+    },
+    "wu": {
+      "title": "Microsoft: Windows Update reset procedures",
+      "url": "https://learn.microsoft.com/en-us/troubleshoot/windows-client/installing-updates-features-roles/additional-resources-for-windows-update"
+    },
+    "installer": {
+      "title": "Microsoft: Missing Windows Installer cache",
+      "url": "https://learn.microsoft.com/en-us/troubleshoot/windows-client/application-management/missing-windows-installer-cache"
+    },
+    "driver": {
+      "title": "Microsoft: Driver Store",
+      "url": "https://learn.microsoft.com/en-us/windows-hardware/drivers/install/driver-store"
+    },
+    "package_data": {
+      "title": "Microsoft: ApplicationData storage semantics",
+      "url": "https://learn.microsoft.com/en-us/uwp/api/windows.storage.applicationdata?view=winrt-28000"
+    },
+    "package_paths": {
+      "title": "Microsoft: Work with files in packaged apps",
+      "url": "https://learn.microsoft.com/en-us/windows/uwp/get-started/fileio-learning-track"
+    },
+    "wer": {
+      "title": "Microsoft: WER diagnostics",
+      "url": "https://learn.microsoft.com/en-us/troubleshoot/windows-client/system-management-components/windows-error-reporting-diagnostics-enablement-guidance"
+    },
+    "wer_archive": {
+      "title": "Microsoft: WER report locations",
+      "url": "https://learn.microsoft.com/en-us/windows-server/failover-clustering/troubleshooting-using-wer-reports"
+    },
+    "dumps": {
+      "title": "Microsoft: Collecting user-mode dumps",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/wer/collecting-user-mode-dumps"
+    },
+    "kernel": {
+      "title": "Microsoft: Kernel live dumps",
+      "url": "https://learn.microsoft.com/en-us/windows-hardware/drivers/debugger/kernel-live-dump-code-reference"
+    },
+    "nvidia_dumps": {
+      "title": "NVIDIA: Crash dump locations",
+      "url": "https://nvidia.custhelp.com/app/answers/detail/a_id/5629/~/how-to-use-microsofts-windbg-to-troubleshoot-application-%2F-system-crashes"
+    },
+    "cbs": {
+      "title": "Microsoft: CBS and DISM logs",
+      "url": "https://learn.microsoft.com/en-us/troubleshoot/azure/virtual-machines/windows/troubleshoot-cbs-component-store-corruption-azure-vm"
+    },
+    "setup": {
+      "title": "Microsoft: Upgrade log files",
+      "url": "https://learn.microsoft.com/en-us/windows/deployment/upgrade/log-files"
+    },
+    "setup_paths": {
+      "title": "Microsoft: Setup log locations",
+      "url": "https://learn.microsoft.com/en-us/troubleshoot/windows-client/setup-upgrade-and-drivers/windows-setup-log-file-locations"
+    },
+    "store": {
+      "title": "Microsoft: Store cache reset",
+      "url": "https://support.microsoft.com/en-us/accounts-billing/microsoft-store-doesn-t-open"
+    },
+    "search": {
+      "title": "Microsoft: Search index performance",
+      "url": "https://learn.microsoft.com/en-us/troubleshoot/windows-client/shell-experience/windows-search-performance-issues"
+    },
+    "teams": {
+      "title": "Microsoft: Teams cache reset",
+      "url": "https://learn.microsoft.com/en-us/troubleshoot/microsoftteams/teams-administration/clear-teams-cache"
+    },
+    "office": {
+      "title": "Microsoft: Office document cache management",
+      "url": "https://support.microsoft.com/en-us/office/collab-files/managing-office-document-cache-size"
+    },
+    "office_repair": {
+      "title": "Microsoft: Office cache repair",
+      "url": "https://support.microsoft.com/en-us/office/collab-files/delete-your-office-document-cache"
+    },
+    "wef": {
+      "title": "Microsoft: Office add-in caches",
+      "url": "https://learn.microsoft.com/en-us/office/dev/add-ins/testing/clear-cache"
+    },
+    "chromium": {
+      "title": "Chromium: User data directories",
+      "url": "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+    },
+    "webview": {
+      "title": "Microsoft: WebView2 user data",
+      "url": "https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/user-data-folder"
+    },
+    "wininet": {
+      "title": "Microsoft: WinINet caching API",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/wininet/caching"
+    },
+    "recycle": {
+      "title": "Microsoft: SHEmptyRecycleBin",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shemptyrecyclebinw"
+    },
+    "dns": {
+      "title": "Microsoft: ipconfig",
+      "url": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/ipconfig"
+    },
+    "events": {
+      "title": "Microsoft: wevtutil",
+      "url": "https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/wevtutil"
+    },
+    "power": {
+      "title": "Microsoft: powercfg",
+      "url": "https://learn.microsoft.com/en-us/windows-hardware/design/device-experiences/powercfg-command-line-options"
+    },
+    "sccm": {
+      "title": "Microsoft: Configuration Manager cache",
+      "url": "https://learn.microsoft.com/en-us/intune/configmgr/core/clients/manage/configure-client-cache"
+    },
+    "branch": {
+      "title": "Microsoft: Clear-BCCache",
+      "url": "https://learn.microsoft.com/en-us/powershell/module/branchcache/clear-bccache?view=windowsserver2025-ps"
+    },
+    "vs": {
+      "title": "Microsoft: Visual Studio package cache",
+      "url": "https://learn.microsoft.com/en-us/visualstudio/install/disable-or-move-the-package-cache?view=visualstudio"
+    },
+    "reparse": {
+      "title": "Microsoft: Reparse points",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/fileio/reparse-points"
+    },
+    "explorer_rules": {
+      "title": "BleachBit: Explorer cleaner implementation",
+      "url": "https://github.com/bleachbit/bleachbit/blob/master/cleaners/windows_explorer.xml"
+    },
+    "community_rules": {
+      "title": "Winapp2: Community rule definitions, path evidence only",
+      "url": "https://raw.githubusercontent.com/MoscaDotTo/Winapp2/master/Non-CCleaner/Winapp2.ini"
+    },
+    "winapp2": {
+      "title": "Winapp2: Project and maintenance guidance",
+      "url": "https://github.com/MoscaDotTo/Winapp2"
+    },
+    "bleachbit": {
+      "title": "BleachBit: Winapp2 integration",
+      "url": "https://docs.bleachbit.org/doc/winapp2ini.html"
+    }
+  }
+}
