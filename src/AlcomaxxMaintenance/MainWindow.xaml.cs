@@ -65,8 +65,9 @@ public partial class MainWindow : Window
             StartedAt = DateTime.UtcNow,
             CurrentStep = 1
         };
-        var path = _workspace.SaveJob(job);
-        MessageBox.Show($"Trabajo creado y guardado en el USB.\n\n{path}\n\nLa pantalla de análisis de aplicaciones será el siguiente módulo.", "Trabajo preparado", MessageBoxButton.OK, MessageBoxImage.Information);
+        _workspace.SaveJob(job);
+        var inventory = new ApplicationInventoryWindow(job, _workspace) { Owner = this };
+        inventory.ShowDialog();
     }
 
     private void Resume_Click(object sender, RoutedEventArgs e)

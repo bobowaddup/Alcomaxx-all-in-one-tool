@@ -7,4 +7,5 @@ public sealed class JobState
     public string Technician { get; set; } = "";
     public DateTime StartedAt { get; set; } = DateTime.UtcNow;
     public int CurrentStep { get; set; }
+    public List<string> SelectedApplicationIds { get; set; } = [];
 }

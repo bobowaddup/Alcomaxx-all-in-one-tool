@@ -14,8 +14,9 @@ Esta primera entrega implementa la base visual del producto y la preparación de
 - identificador persistente de la unidad y estado de cada trabajo en JSON;
 - plantilla portable de BleachBit 5.0.2, copiada a `Config/bleachbit.ini` sin datos específicos del ordenador original;
 - manifiesto que solicita permisos de administrador.
+- inventario de aplicaciones registradas para el usuario y el equipo, con clasificación, búsqueda y selección manual;
 
-Las operaciones destructivas (desinstalación, configuración de arranque seguro, limpieza, CHKDSK, DISM/SFC y puntos de restauración) todavía **no se ejecutan**. Se incorporarán por etapas, con registro y recuperación ante fallos, una vez validada esta dirección visual.
+El inventario guarda la selección dentro del trabajo, pero las operaciones destructivas todavía **no se ejecutan**. Ninguna recomendación se preselecciona y los componentes protegidos no se pueden marcar.
 
 ## Estructura esperada en el USB
 
