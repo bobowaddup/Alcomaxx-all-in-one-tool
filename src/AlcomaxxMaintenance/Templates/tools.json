@@ -1,0 +1,17 @@
+{
+  "bleachBit": {
+    "version": "5.0.2",
+    "executable": "bleachbit.exe",
+    "consoleExecutable": "bleachbit_console.exe"
+  },
+  "zhpCleaner": {
+    "version": "",
+    "executable": "ZHPCleaner.exe"
+  },
+  "cCleaner": {
+    "edition": "Free",
+    "version": "5.44.6575",
+    "architecture": "x64",
+    "executable": ""
+  }
+}
