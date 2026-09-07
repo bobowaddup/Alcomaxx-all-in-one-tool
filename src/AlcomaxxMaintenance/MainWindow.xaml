@@ -1,0 +1,103 @@
+<Window x:Class="AlcomaxxMaintenance.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ALCOMAXX Maintenance Tool" Width="1280" Height="800" MinWidth="1050" MinHeight="680"
+        WindowStartupLocation="CenterScreen" Background="{StaticResource Canvas}" FontFamily="Segoe UI">
+  <Grid>
+    <Grid.ColumnDefinitions><ColumnDefinition Width="278"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+
+    <Border Grid.Column="0" Background="{StaticResource Navy}">
+      <Grid Margin="26,28,22,24">
+        <Grid.RowDefinitions><RowDefinition Height="128"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Border Background="Black" CornerRadius="8" Margin="0,0,0,18" Padding="12">
+          <Grid ToolTip="ALCOMAXX · PC · Multimedia · Móvil">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="58"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Border Width="50" Height="50" CornerRadius="25" Background="{StaticResource Cyan}" VerticalAlignment="Center">
+              <TextBlock Text="A" Foreground="White" FontSize="31" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,0,0">
+              <TextBlock Text="ALCOMAXX" Foreground="White" FontSize="18" FontWeight="Bold" CharacterSpacing="45"/>
+              <TextBlock Text="PC · MULTIMEDIA · MÓVIL" Foreground="#89DDF2" FontSize="8" FontWeight="SemiBold"/>
+            </StackPanel>
+          </Grid>
+        </Border>
+        <ItemsControl Grid.Row="1" ItemsSource="{Binding Steps}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Border Margin="0,0,0,5" Padding="12,9" CornerRadius="7" Background="#183B59">
+                <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="35"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                  <Border Width="27" Height="27" CornerRadius="14" Background="#245778">
+                    <TextBlock Text="{Binding Number}" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold"/>
+                  </Border>
+                  <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding Title}" Foreground="White" FontSize="13" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding Subtitle}" Foreground="#9DB7CB" FontSize="10"/>
+                  </StackPanel>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Grid.Row="2" Foreground="#82A6C2" FontSize="11" Text="GPLv3 · Sin garantía · Ver LICENSE" TextWrapping="Wrap"/>
+      </Grid>
+    </Border>
+
+    <Grid Grid.Column="1">
+      <Grid.RowDefinitions><RowDefinition Height="82"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+      <Border Background="White" BorderBrush="#E3ECF3" BorderThickness="0,0,0,1" Padding="34,0">
+        <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="Nuevo mantenimiento" Foreground="{StaticResource Navy}" FontSize="20" FontWeight="SemiBold"/>
+            <TextBlock Text="Preparación del trabajo · Windows 10/11" Foreground="{StaticResource Muted}" FontSize="12"/>
+          </StackPanel>
+          <Border Grid.Column="1" Background="#EAF8FC" CornerRadius="16" Padding="13,7" VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal"><Ellipse Width="8" Height="8" Fill="#21B573" Margin="0,0,7,0"/><TextBlock Text="Modo normal" Foreground="#176D54" FontWeight="SemiBold"/></StackPanel>
+          </Border>
+        </Grid>
+      </Border>
+
+      <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <Grid Margin="42,36"><Grid.ColumnDefinitions><ColumnDefinition Width="3*"/><ColumnDefinition Width="2*"/></Grid.ColumnDefinitions>
+          <StackPanel Margin="0,0,25,0">
+            <TextBlock Text="Preparemos el equipo" Foreground="{StaticResource Navy}" FontSize="30" FontWeight="Bold"/>
+            <TextBlock Margin="0,8,0,28" Text="Identifique el trabajo antes de analizar las aplicaciones instaladas." Foreground="{StaticResource Muted}" FontSize="14"/>
+            <Border Background="White" CornerRadius="10" Padding="26" BorderBrush="#E3ECF3" BorderThickness="1">
+              <StackPanel>
+                <TextBlock Text="DATOS DEL SERVICIO" Foreground="{StaticResource Blue}" FontSize="12" FontWeight="Bold"/>
+                <TextBlock Margin="0,20,0,7" Text="Número de SAT" Foreground="{StaticResource Navy}" FontWeight="SemiBold"/>
+                <TextBox x:Name="SatNumber" ToolTip="Número único del trabajo"/>
+                <TextBlock Margin="0,17,0,7" Text="Cliente" Foreground="{StaticResource Navy}" FontWeight="SemiBold"/>
+                <TextBox x:Name="ClientName"/>
+                <TextBlock Margin="0,17,0,7" Text="Técnico" Foreground="{StaticResource Navy}" FontWeight="SemiBold"/>
+                <ComboBox x:Name="Technician" ItemsSource="{Binding Technicians}"/>
+                <TextBlock Margin="0,7,0,0" Text="La lista se edita en Config\technicians.txt en el USB." Foreground="{StaticResource Muted}" FontSize="11"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,28,0,0">
+                  <Button x:Name="ResumeButton" Content="Reanudar trabajo" Background="#E8F1FA" Foreground="{StaticResource Blue}" Margin="0,0,10,0" Click="Resume_Click"/>
+                  <Button Content="Crear trabajo" Background="{StaticResource Blue}" Foreground="White" Click="CreateJob_Click"/>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+
+          <StackPanel Grid.Column="1" Margin="5,52,0,0">
+            <Border Background="{StaticResource Navy}" CornerRadius="11" Padding="25">
+              <StackPanel>
+                <TextBlock Text="ESTADO DEL EQUIPO" Foreground="#8FC8EA" FontSize="11" FontWeight="Bold"/>
+                <TextBlock Margin="0,15,0,2" Text="{Binding ComputerName}" Foreground="White" FontSize="20" FontWeight="SemiBold"/>
+                <TextBlock Text="{Binding OsDescription}" Foreground="#AFC7DD" FontSize="12"/>
+                <Separator Margin="0,20" Background="#31536E"/>
+                <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                  <StackPanel><TextBlock Text="0%" Foreground="{StaticResource Cyan}" FontSize="25" FontWeight="Bold"/><TextBlock Text="Progreso" Foreground="#AFC7DD"/></StackPanel>
+                  <StackPanel Grid.Column="1"><TextBlock Text="10" Foreground="White" FontSize="25" FontWeight="Bold"/><TextBlock Text="Etapas" Foreground="#AFC7DD"/></StackPanel>
+                </Grid>
+              </StackPanel>
+            </Border>
+            <Border Margin="0,18,0,0" Background="#EAF8FC" BorderBrush="#BDEBF6" BorderThickness="1" CornerRadius="9" Padding="18">
+              <StackPanel><TextBlock Text="ⓘ  Trabajo desde USB" Foreground="#086986" FontWeight="Bold"/><TextBlock Margin="0,7,0,0" Text="Los datos, registros e informes permanecen en esta unidad. Manténgala conectada durante todo el proceso." Foreground="#386477" TextWrapping="Wrap" LineHeight="19"/></StackPanel>
+            </Border>
+          </StackPanel>
+        </Grid>
+      </ScrollViewer>
+    </Grid>
+  </Grid>
+</Window>
