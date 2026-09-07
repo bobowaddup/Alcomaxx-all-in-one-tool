@@ -75,4 +75,4 @@ El perfil incluye categorías que eliminan sesiones, cookies, historial, cuarent
 
 ## Versiones de herramientas
 
-Las versiones confirmadas se guardan en `src/AlcomaxxMaintenance/Templates/tools.json`. La versión de CCleaner facilitada es **CCleaner Free 6.41.11567 (64-bit)**. La aplicación copiará este archivo a `Config/tools.json` sin sobrescribir cambios posteriores. El nombre del ejecutable queda pendiente hasta conocer el archivo exacto presente en el USB; la imagen de la interfaz de CCleaner no se redistribuye con esta aplicación.
+Las versiones y ejecutables confirmados se guardan en `src/AlcomaxxMaintenance/Templates/tools.json`: BleachBit 5.0.2 utiliza `bleachbit.exe` y `bleachbit_console.exe`, y ZHP Cleaner utiliza `ZHPCleaner.exe`. La versión aprobada de CCleaner es **CCleaner Free 5.44.6575 (64-bit)**; su nombre de ejecutable todavía está pendiente. La aplicación copia este archivo a `Config/tools.json` sin sobrescribir cambios posteriores.
