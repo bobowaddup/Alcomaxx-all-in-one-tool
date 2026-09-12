@@ -15,12 +15,13 @@
         <DataGridTextColumn Header="Aplicación" Binding="{Binding Name}" Width="2*" IsReadOnly="True"/>
         <DataGridTextColumn Header="Editor" Binding="{Binding Publisher}" Width="1.4*" IsReadOnly="True"/>
         <DataGridTextColumn Header="Versión" Binding="{Binding Version}" Width="*" IsReadOnly="True"/>
+        <DataGridTextColumn Header="Origen" Binding="{Binding Source}" Width="*" IsReadOnly="True"/>
         <DataGridTextColumn Header="Clasificación" Binding="{Binding Category}" Width="1.5*" IsReadOnly="True"/>
       </DataGrid.Columns>
     </DataGrid>
     <Grid Grid.Row="3" Margin="0,16,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
       <TextBlock Text="Los componentes protegidos no se pueden seleccionar. Esta pantalla no desinstala nada." Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
-      <Button Grid.Column="1" Content="Guardar selección" Click="Save_Click" Background="{StaticResource Blue}" Foreground="White"/>
+      <Button Grid.Column="1" x:Name="SaveButton" Content="Guardar selección" Click="Save_Click" Background="{StaticResource Blue}" Foreground="White" IsEnabled="False"/>
     </Grid>
   </Grid>
 </Window>

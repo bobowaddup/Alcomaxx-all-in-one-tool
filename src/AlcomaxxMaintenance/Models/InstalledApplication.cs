@@ -11,6 +11,7 @@ public sealed class InstalledApplication : INotifyPropertyChanged
     public string Publisher { get; init; } = "";
     public string Version { get; init; } = "";
     public string UninstallCommand { get; init; } = "";
+    public string Source { get; init; } = "Escritorio";
     public required string Category { get; init; }
     public bool IsProtected { get; init; }
     public bool CanSelect => !IsProtected && !string.IsNullOrWhiteSpace(UninstallCommand);

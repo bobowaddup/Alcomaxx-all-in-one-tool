@@ -8,4 +8,5 @@ public sealed class JobState
     public DateTime StartedAt { get; set; } = DateTime.UtcNow;
     public int CurrentStep { get; set; }
     public List<string> SelectedApplicationIds { get; set; } = [];
+    public List<SelectedApplication> SelectedApplications { get; set; } = [];
 }

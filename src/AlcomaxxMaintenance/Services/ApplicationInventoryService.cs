@@ -1,5 +1,7 @@
 using AlcomaxxMaintenance.Models;
 using Microsoft.Win32;
+using System.Diagnostics;
+using System.Text.Json;
 
 namespace AlcomaxxMaintenance.Services;
 
@@ -10,16 +12,48 @@ public sealed class ApplicationInventoryService
     private static readonly string[] Review = ["office", "onedrive", "teams", "outlook", "copilot", "phone link", "your phone"];
     private static readonly string[] Protected = ["visual c++", "webview2", "windows app runtime", ".net", "windows security", "windows desktop runtime", "windows sdk", "driver"];
 
-    public Task<IReadOnlyList<InstalledApplication>> ScanAsync() => Task.Run<IReadOnlyList<InstalledApplication>>(() =>
+    public async Task<IReadOnlyList<InstalledApplication>> ScanAsync()
     {
-        var results = new List<InstalledApplication>();
-        var views = Environment.Is64BitOperatingSystem ? new[] { RegistryView.Registry64, RegistryView.Registry32 } : [RegistryView.Registry32];
-        foreach (var hive in new[] { RegistryHive.LocalMachine, RegistryHive.CurrentUser })
-        foreach (var view in views)
-            ReadRegistry(hive, view, results);
+        var results = await Task.Run(() =>
+        {
+            var desktop = new List<InstalledApplication>();
+            var views = Environment.Is64BitOperatingSystem ? new[] { RegistryView.Registry64, RegistryView.Registry32 } : [RegistryView.Registry32];
+            foreach (var hive in new[] { RegistryHive.LocalMachine, RegistryHive.CurrentUser })
+            foreach (var view in views) ReadRegistry(hive, view, desktop);
+            return desktop;
+        });
+        results.AddRange(await ReadStoreAppsAsync());
         return results.GroupBy(x => $"{x.Name}|{x.Publisher}|{x.Version}", StringComparer.OrdinalIgnoreCase)
             .Select(x => x.First()).OrderBy(x => x.Category).ThenBy(x => x.Name).ToArray();
-    });
+    }
+
+    private static async Task<IReadOnlyList<InstalledApplication>> ReadStoreAppsAsync()
+    {
+        const string query = "Get-AppxPackage | Select-Object Name,PackageFullName,Publisher,Version,NonRemovable | ConvertTo-Json -Compress";
+        using var process = new Process { StartInfo = new() { FileName = "powershell.exe", Arguments = $"-NoProfile -NonInteractive -Command \"{query}\"", UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true } };
+        try
+        {
+            process.Start();
+            var output = await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
+            if (process.ExitCode != 0 || string.IsNullOrWhiteSpace(output)) return [];
+            using var json = JsonDocument.Parse(output);
+            var entries = json.RootElement.ValueKind == JsonValueKind.Array ? json.RootElement.EnumerateArray().ToArray() : [json.RootElement];
+            return entries.Select(CreateStoreApp).Where(x => x is not null).Cast<InstalledApplication>().ToArray();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or JsonException) { return []; }
+    }
+
+    private static InstalledApplication? CreateStoreApp(JsonElement entry)
+    {
+        var name = entry.TryGetProperty("Name", out var p) ? p.GetString() : null;
+        var package = entry.TryGetProperty("PackageFullName", out p) ? p.GetString() : null;
+        if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(package)) return null;
+        var publisher = entry.TryGetProperty("Publisher", out p) ? p.GetString() ?? "" : "";
+        var nonRemovable = entry.TryGetProperty("NonRemovable", out p) && p.ValueKind == JsonValueKind.True;
+        var classification = nonRemovable ? ("Componentes protegidos", true) : Classify(name, publisher);
+        return new() { Id = $"appx:{package}", Name = name, Publisher = publisher, Version = entry.TryGetProperty("Version", out p) ? p.ToString() : "", Source = "Microsoft Store", UninstallCommand = classification.Item2 ? "" : $"Remove-AppxPackage -Package '{package.Replace("'", "''")}'", Category = classification.Item1, IsProtected = classification.Item2 };
+    }
 
     private static void ReadRegistry(RegistryHive hive, RegistryView view, List<InstalledApplication> results)
     {

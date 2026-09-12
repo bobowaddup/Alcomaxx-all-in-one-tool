@@ -31,7 +31,7 @@ public partial class ApplicationInventoryWindow : Window
             StatusText.Text = $"{Applications.Count} aplicaciones encontradas. Ninguna se selecciona automáticamente.";
         }
         catch (Exception ex) { MessageBox.Show(ex.Message, "No se pudo completar el análisis", MessageBoxButton.OK, MessageBoxImage.Error); }
-        finally { ScanButton.IsEnabled = true; UpdateCount(); }
+        finally { ScanButton.IsEnabled = true; SaveButton.IsEnabled = Applications.Count > 0; UpdateCount(); }
     }
 
     private bool Filter(object value) => value is InstalledApplication app && (string.IsNullOrWhiteSpace(SearchBox?.Text) || $"{app.Name} {app.Publisher} {app.Version}".Contains(SearchBox.Text, StringComparison.CurrentCultureIgnoreCase));
@@ -41,7 +41,11 @@ public partial class ApplicationInventoryWindow : Window
 
     private void Save_Click(object sender, RoutedEventArgs e)
     {
-        _job.SelectedApplicationIds = Applications.Where(x => x.IsSelected).Select(x => x.Id).ToList();
+        var selected = Applications.Where(x => x.IsSelected).ToArray();
+        var summary = selected.Length == 0 ? "No se ha seleccionado ninguna aplicación." : string.Join("\n", selected.Take(10).Select(x => $"• {x.Name}")) + (selected.Length > 10 ? $"\n… y {selected.Length - 10} más" : "");
+        if (MessageBox.Show($"Revise la selección antes de guardarla:\n\n{summary}\n\n¿Desea continuar?", "Confirmar selección", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        _job.SelectedApplicationIds = selected.Select(x => x.Id).ToList();
+        _job.SelectedApplications = selected.Select(x => new SelectedApplication { Id = x.Id, Name = x.Name, Publisher = x.Publisher, Version = x.Version, Source = x.Source, Category = x.Category }).ToList();
         _job.CurrentStep = 2; var path = _workspace.SaveJob(_job);
         MessageBox.Show($"Selección guardada en el USB.\n{path}\n\nNo se ha desinstalado nada.", "ALCOMAXX", MessageBoxButton.OK, MessageBoxImage.Information);
     }

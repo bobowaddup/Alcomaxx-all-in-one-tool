@@ -14,7 +14,7 @@ Esta primera entrega implementa la base visual del producto y la preparación de
 - identificador persistente de la unidad y estado de cada trabajo en JSON;
 - plantilla portable de BleachBit 4.2.0, copiada a `Config/bleachbit.ini` sin datos específicos del ordenador original;
 - manifiesto que solicita permisos de administrador.
-- inventario de aplicaciones registradas para el usuario y el equipo, con clasificación, búsqueda y selección manual;
+- inventario de aplicaciones registradas y paquetes Microsoft Store del usuario, con clasificación, búsqueda y selección manual;
 
 El inventario guarda la selección dentro del trabajo, pero las operaciones destructivas todavía **no se ejecutan**. Ninguna recomendación se preselecciona y los componentes protegidos no se pueden marcar.
 
