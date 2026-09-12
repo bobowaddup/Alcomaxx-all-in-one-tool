@@ -1,0 +1,27 @@
+<Window x:Class="AlcomaxxMaintenance.ApplicationInventoryWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Aplicaciones · ALCOMAXX" Width="1120" Height="720" MinWidth="900" MinHeight="600" WindowStartupLocation="CenterOwner" Background="{StaticResource Canvas}">
+  <Grid Margin="30"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+      <StackPanel><TextBlock Text="Aplicaciones instaladas" FontSize="28" FontWeight="Bold" Foreground="{StaticResource Navy}"/><TextBlock x:Name="StatusText" Text="Pulse Analizar para consultar el registro de Windows." Foreground="{StaticResource Muted}" Margin="0,5,0,0"/></StackPanel>
+      <Button Grid.Column="1" x:Name="ScanButton" Content="Analizar aplicaciones" Click="Scan_Click" Background="{StaticResource Blue}" Foreground="White"/>
+    </Grid>
+    <Grid Grid.Row="1" Margin="0,18,0,12"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+      <TextBox x:Name="SearchBox" TextChanged="Search_Changed" ToolTip="Buscar por nombre, editor o versión"/>
+      <TextBlock Grid.Column="1" x:Name="SelectedText" Text="0 seleccionadas" Margin="18,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
+    </Grid>
+    <DataGrid Grid.Row="2" ItemsSource="{Binding ApplicationsView}" AutoGenerateColumns="False" CanUserAddRows="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal">
+      <DataGrid.Columns>
+        <DataGridTemplateColumn Width="45"><DataGridTemplateColumn.CellTemplate><DataTemplate><CheckBox HorizontalAlignment="Center" IsEnabled="{Binding CanSelect}" IsChecked="{Binding IsSelected, Mode=TwoWay}" Checked="Selection_Changed" Unchecked="Selection_Changed"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+        <DataGridTextColumn Header="Aplicación" Binding="{Binding Name}" Width="2*" IsReadOnly="True"/>
+        <DataGridTextColumn Header="Editor" Binding="{Binding Publisher}" Width="1.4*" IsReadOnly="True"/>
+        <DataGridTextColumn Header="Versión" Binding="{Binding Version}" Width="*" IsReadOnly="True"/>
+        <DataGridTextColumn Header="Origen" Binding="{Binding Source}" Width="*" IsReadOnly="True"/>
+        <DataGridTextColumn Header="Clasificación" Binding="{Binding Category}" Width="1.5*" IsReadOnly="True"/>
+      </DataGrid.Columns>
+    </DataGrid>
+    <Grid Grid.Row="3" Margin="0,16,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+      <TextBlock Text="Los componentes protegidos no se pueden seleccionar. Esta pantalla no desinstala nada." Foreground="{StaticResource Muted}" VerticalAlignment="Center"/>
+      <Button Grid.Column="1" x:Name="SaveButton" Content="Guardar selección" Click="Save_Click" Background="{StaticResource Blue}" Foreground="White" IsEnabled="False"/>
+    </Grid>
+  </Grid>
+</Window>

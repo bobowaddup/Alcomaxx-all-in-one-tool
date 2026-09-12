@@ -1,0 +1,40 @@
+name: Compilar aplicación Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, work]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Instalar .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Compilar y probar
+        shell: pwsh
+        run: dotnet build .\ALCOMAXX-Maintenance-Tool.sln --configuration Release
+
+      - name: Crear paquete para USB
+        shell: pwsh
+        run: .\scripts\Build-UsbPackage.ps1
+
+      - name: Publicar descarga
+        uses: actions/upload-artifact@v4
+        with:
+          name: ALCOMAXX-Maintenance-Tool-win-x64
+          path: artifacts/ALCOMAXX-Maintenance-Tool-win-x64.zip
+          if-no-files-found: error
+          retention-days: 30
